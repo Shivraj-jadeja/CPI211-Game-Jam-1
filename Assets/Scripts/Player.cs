@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using TMPro;
 public class Player : MonoBehaviour
 {
     private Rigidbody body;
@@ -25,6 +25,9 @@ public class Player : MonoBehaviour
 
     public Vector3 facing;
     public Vector3 perpendicular;
+
+    public AudioSource audioPlayer;
+    public AudioClip soundDash;
 
     [SerializeField] private bool isJumping = false;
 
@@ -93,6 +96,10 @@ public class Player : MonoBehaviour
         if (isDashing) return;
         if (Time.time < nextDashTime) return;
         if (body == null) return;
+
+        if (audioPlayer != null && soundDash != null){
+            audioPlayer.PlayOneShot(soundDash);
+        }
 
         Vector3 forward = Vector3.forward;
         Vector3 right = Vector3.right;
