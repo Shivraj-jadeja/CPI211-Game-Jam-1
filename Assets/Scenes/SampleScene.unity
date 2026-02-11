@@ -18706,7 +18706,7 @@ Transform:
   m_GameObject: {fileID: 602154498}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.01, y: 1.06, z: 44.04}
+  m_LocalPosition: {x: 53.909138, y: 0.05699992, z: 19.49659}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -42117,6 +42117,7 @@ GameObject:
   - component: {fileID: 1486811553}
   - component: {fileID: 1486811555}
   - component: {fileID: 1486811554}
+  - component: {fileID: 1486811556}
   m_Layer: 5
   m_Name: CoinCounterText
   m_TagString: Untagged
@@ -42243,6 +42244,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1486811552}
   m_CullTransparentMesh: 1
+--- !u!114 &1486811556
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1486811552}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 098c08eb583065f4bb7633b5607d6218, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CoinCounter
+  countText: {fileID: 1486811554}
 --- !u!4 &1487808137 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: f72273ba9bbc06540b3ce612324b9998, type: 3}
@@ -44490,6 +44504,10 @@ PrefabInstance:
       propertyPath: dashWindPrefab
       value: 
       objectReference: {fileID: 1431461501662069476, guid: 95217ecc567fdce4bac606d1736d6458, type: 3}
+    - target: {fileID: 5290388579814064921, guid: a8a88a4add4941541aa92e39b0e1e0f0, type: 3}
+      propertyPath: groundStickForce
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5290388579814064921, guid: a8a88a4add4941541aa92e39b0e1e0f0, type: 3}
       propertyPath: postDashNoClampTime
       value: 0.18
