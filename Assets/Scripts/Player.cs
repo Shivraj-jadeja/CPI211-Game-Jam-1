@@ -15,13 +15,21 @@ public class Player : MonoBehaviour
     public float voidHeight = -20f;
 
     [Header("Dash")]
-    [SerializeField] private bool hasDash = false;      // locked until mystery box
-    [SerializeField] private float dashDistance = 5f;   // how far dash should go
+    [SerializeField] private bool hasDash = false;
+    [SerializeField] private float dashDistance = 5f;
     [SerializeField] private float dashDuration = 0.15f;
     [SerializeField] private float dashCooldown = 0.75f;
 
     private bool isDashing = false;
     private float nextDashTime = 0f;
+
+    [Header("Ground Stick (Fix slope micro-jumps)")]
+    [SerializeField] private float groundCheckDistance = 0.75f;
+    [SerializeField] private float groundStickForce = 35f;     // 20-45 usually good
+    [SerializeField] private float microHopUpVelCap = 0.20f;   // only caps tiny hops, not real jumps
+    [SerializeField] private float stickDisableAfterJump = 0.12f;
+
+    private float lastJumpTime = -999f;
 
     public Vector3 facing;
     public Vector3 perpendicular;
@@ -46,12 +54,12 @@ public class Player : MonoBehaviour
 
         if (CheckpointManager.Instance != null)
             CheckpointManager.Instance.SetCheckpoint(transform.position);
+
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
     }
 
-    public void UnlockDash()
-    {
-        hasDash = true;
-    }
+    public void UnlockDash() { hasDash = true; }
 
     public void Respawn()
     {
@@ -66,14 +74,12 @@ public class Player : MonoBehaviour
 
     void Update()
     {
+        // Jump
         if (Input.GetButtonDown("Jump") && !isJumping)
         {
             isJumping = true;
-            if (body != null){
-                
-                body.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
-            }
-        
+            lastJumpTime = Time.time;
+            body.AddForce(Vector3.up * jumpPower, ForceMode.Impulse);
         }
 
         xInput = Input.GetAxis("Horizontal");
@@ -81,14 +87,10 @@ public class Player : MonoBehaviour
         braking = Input.GetKey(KeyCode.B);
 
         if (hasDash && Input.GetKeyDown(KeyCode.LeftShift))
-        {
             TryDash();
-        }
 
         if (transform.position.y < voidHeight)
-        {
             Respawn();
-        }
     }
 
     private void TryDash()
@@ -103,12 +105,12 @@ public class Player : MonoBehaviour
         if (camTf != null)
         {
             forward = Vector3.ProjectOnPlane(camTf.forward, Vector3.up).normalized;
-            right = Vector3.ProjectOnPlane(camTf.right, Vector3.up).normalized;
+            right   = Vector3.ProjectOnPlane(camTf.right, Vector3.up).normalized;
         }
         else
         {
             forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
-            right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+            right   = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
         }
 
         Vector3 inputDir = (forward * zInput) + (right * xInput);
@@ -138,24 +140,41 @@ public class Player : MonoBehaviour
         isDashing = false;
     }
 
-
-    
-
     void FixedUpdate()
     {
         if (isDashing) return;
         if (body == null) return;
 
+        // Camera-relative directions on XZ plane
         Vector3 forward = Vector3.forward;
         Vector3 right = Vector3.right;
 
         if (camTf != null)
         {
             forward = Vector3.ProjectOnPlane(camTf.forward, Vector3.up).normalized;
-            right = Vector3.ProjectOnPlane(camTf.right, Vector3.up).normalized;
+            right   = Vector3.ProjectOnPlane(camTf.right, Vector3.up).normalized;
         }
 
         Vector3 inputDir = (forward * zInput) + (right * xInput);
+
+        // Grounded check
+        bool grounded = false;
+        Ray ray = new Ray(transform.position + Vector3.up * 0.15f, Vector3.down);
+        if (Physics.Raycast(ray, groundCheckDistance))
+            grounded = true;
+
+        // Only apply stick if grounded AND not within the "just jumped" window
+        bool stickAllowed = grounded && (Time.time - lastJumpTime) > stickDisableAfterJump;
+
+        if (stickAllowed && inputDir.sqrMagnitude > 0.001f)
+        {
+            body.AddForce(Vector3.down * groundStickForce, ForceMode.Acceleration);
+
+            // Cap ONLY tiny upward micro-hops (never affects real jumps because it's disabled right after jump)
+            Vector3 v = body.linearVelocity;
+            if (!isJumping && v.y > microHopUpVelCap)
+                body.linearVelocity = new Vector3(v.x, microHopUpVelCap, v.z);
+        }
 
         if (braking)
         {
@@ -167,10 +186,10 @@ public class Player : MonoBehaviour
 
         body.AddForce(inputDir * moveForce, ForceMode.Force);
 
-        Vector3 v = body.linearVelocity;
-        Vector3 lateral = new Vector3(v.x, 0f, v.z);
+        Vector3 v2 = body.linearVelocity;
+        Vector3 lateral = new Vector3(v2.x, 0f, v2.z);
         lateral = Vector3.ClampMagnitude(lateral, maxSpeed);
-        body.linearVelocity = new Vector3(lateral.x, v.y, lateral.z);
+        body.linearVelocity = new Vector3(lateral.x, v2.y, lateral.z);
     }
 
     private Vector3 GetPerpendicular(Vector3 inVec)
@@ -185,9 +204,8 @@ public class Player : MonoBehaviour
         col.GetContacts(list);
 
         for (int i = 0; i < col.contactCount; i++)
-        {
             delta += transform.position - list[i].point;
-        }
+
         delta /= col.contactCount;
 
         if (Mathf.Abs(delta.y) > 0.25f)
