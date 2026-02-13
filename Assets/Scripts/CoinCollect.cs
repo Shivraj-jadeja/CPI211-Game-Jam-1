@@ -2,12 +2,18 @@ using UnityEngine;
 
 public class CoinCollect : MonoBehaviour
 {
+    [Header("Audio")]
+    public AudioClip soundCoin;
     private void OnTriggerEnter(Collider other)
     {
         Debug.Log("Coin trigger hit by: " + other.name);
 
         if (!other.CompareTag("Player"))
             return;
+        
+        if (soundCoin != null){
+            AudioSource.PlayClipAtPoint(soundCoin, transform.position);
+        }
 
         Debug.Log("Collected coin!");
 
